@@ -145,19 +145,21 @@ function printHelp {
     echo "Function list:"
     
     echo -n '    '
-    if [ $hasAdb = "t" ]; then echo -n '✔'; else echo -n '✖';fi;
+    if [ $hasAdb = "t" ]; then echo -n '✔'; else echo -n ' ✖';fi;
     echo " pull";
     
     echo -n '    '
-    if [ $hasFramework = "t" ]; then echo -n '✔'; else echo -n '✖';fi;
+    if [ $hasFramework = "t" ]; then echo -n '✔'; else echo -n ' ✖';fi;
     echo " framework";
 
     echo -n '    '
-    if [ $canDeoptimize = "t" ]; then echo -n '✔'; else echo -n '✖';fi;
+    if [ $canDeoptimize = "t" ]; then echo -n '✔'; else echo -n ' ✖';fi;
     echo " odex";
 
-    echo "   ✔ dex";
-    echo "   ✔ jar";
+    echo -n '    ';
+    echo '✔ dex';
+    echo -n '    ';
+    echo '✔ jar';
 }
 
 
@@ -381,10 +383,14 @@ checkFrameworkDir
 checkhasDecodedFw
 checkAdb
 
-hasAdb="f"
-hasDecodedFw="f"
-hasFramework="f"
-canDeoptimize="f"
+#
+# Only enable when you want to see bootstrap hints
+#
+
+# hasAdb="f"
+# hasDecodedFw="f"
+# hasFramework="f"
+# canDeoptimize="f"
 
 if [ $hasJava = "f" ]; then
     echo "Exited because there no java installed."
