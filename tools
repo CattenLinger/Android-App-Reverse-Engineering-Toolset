@@ -74,12 +74,13 @@ function checkJava {
 # Print help info
 #
 function printHelp {
-    echo "-----------------------------------------------"
+    echo "-----------------------------------------------------------------------------------"
     echo "       Android App de-compile toolset"
-    echo "-----------------------------------------------"
+    echo "-----------------------------------------------------------------------------------"
     echo " Author: CattenLinger"
     echo " Email: cattenlinger@outlook.com"
-    echo "-----------------------------------------------"
+    echo " Github: https://github.com/CattenLinger/Android-App-Reverse-Engineering-Toolset"
+    echo "-----------------------------------------------------------------------------------"
     echo 
     echo "Useage: "
     echo '      pull | -p : Pull files from device'
