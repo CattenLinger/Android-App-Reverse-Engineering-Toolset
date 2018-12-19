@@ -1,10 +1,10 @@
------------------------------------------------
+---------------------------------------------------------------------------------
        Android App de-compile toolset
------------------------------------------------
+---------------------------------------------------------------------------------
  Author: CattenLinger
  Email: cattenlinger@outlook.com
  Github: https://github.com/CattenLinger/Android-App-Reverse-Engineering-Toolset
------------------------------------------------
+---------------------------------------------------------------------------------
 
 A toolset to deal with odex, dex and jar. For convenience, I wrote a tool script 
 to use them. Execute the "tools" file in shell to see help info.
@@ -14,3 +14,7 @@ It included:
 - JD-GUI    GUI tool to expore jar file.
 - dex-tools Tools for handling android app.
 - oat2dex   Tools for handling odex and oat files.
+
+If you want to de-optmize odex files, system framework is required. Put your 
+andoird system framewrok into ./framework and associated functions will be
+avaliable.

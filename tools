@@ -6,24 +6,26 @@
 
 workDir=$(pwd)
 outputDir="${workDir}/output"
-
-fwPath="${workDir}/framework"
-hasFramework="f"
-
-decodedFw="${workDir}/framework-decoded"
-hasDecodedFw="f"
+if [ ! -d "$outputDir" ]; then
+  mkdir "$outputDir"
+fi
 
 oat2dex="${workDir}/oat2dex.jar"
-canDeoptimize="f"
-
 dex2jar="${workDir}/dex-tools/d2j-dex2jar.sh"
 jdcli="${workDir}/jd-cli.jar"
 
-hasAdb="f"
-hasJava="f"
-
 echo
 
+#
+#   Check abilities
+#
+
+fwPath="${workDir}/framework"
+if [ ! -d "$fwPath" ]; then
+  mkdir "$fwPath"
+fi
+hasFramework="f"
+canDeoptimize="f"
 function checkFrameworkDir {
     if [ "l$(ls "${fwPath}")" = "l" ]; then
         echo "# Android System Framework #############################"
@@ -39,12 +41,18 @@ function checkFrameworkDir {
     fi
 }
 
+decodedFw="${workDir}/framework-decoded"
+if [ ! -d "$decodedFw" ]; then
+  mkdir "$decodedFw"
+fi
+hasDecodedFw="f"
 function checkhasDecodedFw {
     if [ "l$(ls "${decodedFw}")" != "l" ]; then
         hasDecodedFw="t"
     fi
 }
 
+hasAdb="f"
 function checkAdb {
     if [ "c$(adb)" = "c" ]; then
         echo "# Android Debug Tools ##################################"
@@ -57,6 +65,7 @@ function checkAdb {
     fi
 }
 
+hasJava="f"
 function checkJava {
     if [ "c$(java -version 2>&1)" = "c" ]; then
         echo "# Java Runtime ########################################"
@@ -83,56 +92,169 @@ function printHelp {
     echo "-----------------------------------------------------------------------------------"
     echo 
     echo "Useage: "
-    echo '      pull | -p : Pull files from device'
+    echo '    pull | -p <framework|app>: Pull files from device'
     if [ $hasAdb = "f" ]; then
-    echo '                  ** Currently not avaliable, ADB required'
+    echo '        ** Currently not avaliable, ADB required'
     fi
-    echo '                  ** Under constructions....'
+    echo '        framework | -fw : Pull system framework'
+    echo '            If framework exists, ask to overwrite or not'
+    echo "            ${0} -fw <--force>"
+    echo '            <--force>: Optional, delete exists framework'
     echo
+    echo '        app | -a : Pull system application.'
+    echo '            It will operates in /system/app and /system/priv-app folders.'
+    echo "            ${0} -a [-l|-a|-p|app name] [app name]"
+    echo '                           [list | -l]: List files in app & priv-app only'
+    echo '                  [app |-a] <app name>: Pull app from /system/app'
+    echo '            [priv-app | -p] [app name]: Pull app from /system/priv-app'
+    echo '                            [app name]: Pull app, auto find in those two'
+    echo '                                        folders'
 
     echo ' framework | -f : De-optimize framework'
     if [ $hasFramework = "f" ]; then
-    echo '                  ** Currently not avaliable, framework required'
+    echo '     ** Currently not avaliable, framework required'
     fi
     echo
     
-    echo '      odex | -o : De-optimize odex'
+    echo ' odex | -o : De-optimize odex'
     if [ $canDeoptimize = "f" ]; then
-    echo '                  ** Currently not avaliable, require framework'
+    echo '     ** Currently not avaliable, require framework'
     fi
-    echo "                  ${0} -o [filename] <output folder>"
-    echo '                       [filename]: Required, odex file'
-    echo '                  <output folder>: Optional, where to output dex file'
+    echo "     ${0} -o [filename] <output folder>"
+    echo '          [filename]: Required, odex file'
+    echo '     <output folder>: Optional, where to output dex file'
     echo
-
-    echo '       dex | -d : De-compile dex'
-    echo "                  ${0} -d [filename] <output filename>"
-    echo '                       [filename]: Required, dex file'
-    echo '                  <output folder>: Optional, de-compiled jar file output'
+    echo ' dex | -d : De-compile dex'
+    echo "     ${0} -d [filename] <output filename>"
+    echo '          [filename]: Required, dex file'
+    echo '     <output folder>: Optional, de-compiled jar file output'
     echo
-
-    echo '       jar | -j : De-compile jar to source file'
-    echo "                  ${0} -j [filename] <output options> <output target>"
-    echo '                        [filename]: Required, the origin jar file name'
-    echo '                  <output options>: Optional, three options:'
-    echo '                                  --jar | -j : output jar'
-    echo '                                  --zip | -z : output jar and change suffix to "zip"'
-    echo '                                  --dir | -d : output to directory, default'
-    echo '                   <output target>: Optional, where to output'
-    echo '                                    If --dir used, target should be a directory'
-    echo '                                    If --zip | --jar used, target should be a file'
+    echo '  jar | -j : De-compile jar to source file'
+    echo "      ${0} -j [filename] <output options> <output target>"
+    echo '                [filename]: Required, the origin jar file name'
+    echo '          <output options>: Optional, three options:'
+    echo '               --jar | -j : output jar'
+    echo '               --zip | -z : output jar and change suffix to "zip"'
+    echo '               --dir | -d : output to directory, default'
+    echo '           <output target>: Optional, where to output'
+    echo '                            If --dir used, target should be a directory'
+    echo '                            If --zip | --jar used, target should be a file'
 
     echo
+}
+
+
+adbDeviceAttached="f"
+selectedDevice=""
+function checkDevices {
+    local oldIFS=$(echo -n "$IFS")
+    IFS=$'\n'
+    local listOfDevices=($(adb devices))
+    selectedDevice=${listOfDevices[1]}
+    if [ "d${selectedDevice}" != "d" ]; then
+        adbDeviceAttached="t"
+        echo "Devices: ${selectedDevice}"
+    fi
+    
+    IFS=$(echo -n "${oldIFS}")
 }
 
 #
 #   Pull files from phone
 #
+
+function handlePullSystemFramework {
+    local option="${3}"
+
+    if [ "s$option" != "s--force" ]; then
+        if [ "$hasFramework" = "t" ]; then
+            while true; do
+                echo "Framework directory is not empty, override?(yes/no):"
+                read override
+                case $override in
+                    "yes" | "YES" | "y")
+                        break;
+                        ;;
+
+                    "no" | "NO" | "n") 
+                        exit 0; 
+                        break;
+                        ;;
+
+                    *) 
+                        echo "Framework directory is not empty, override?"; 
+                        ;;
+                esac
+            done
+        fi
+    fi
+
+    echo "Pulling framework files...";
+    eval "rm -rf \"${fwPath}\""
+    eval "adb pull \"/system/framework\" \"${workDir}\"";
+    echo "finished"; 
+}
+
+function handlePullApps {
+    local target="${3}"
+    local app="${4}"
+    case $target in
+        "list" | "-l")
+            eval "adb shell ls -l /system/app /system/priv-app";
+            ;;
+
+        "app" | "-a")
+            if [ "s$app" != "s" ]; then eval "adb pull \"/system/app/${app}\" \"${outputDir}\"";
+            else echo "Need a app name"; fi;
+            ;;
+
+        "priv-app" | "-p")
+            if [ "s$app" != "s" ]; then eval "adb pull \"/system/priv-app/${app}\" \"${outputDir}\"";
+            else echo "Need a app name"; fi;
+            ;;
+
+        *)
+            local oldIFS=$(echo -n "$IFS")
+            IFS=$'\n'
+            local findResult=($(adb shell find /system/priv-app /system/app -name "${target}"));
+            if [ ${#findResult[*]} = 0 ]; then 
+                echo "No app named ${target} found.";
+            else
+                for appPath in $findResult; do
+                    eval "adb pull \"${appPath}\" "${outputDir}"";
+                done
+            fi
+            IFS=$(echo -n "$oldIFS");
+            ;;
+    esac
+}
+
 function pullMode {
-    if [ $hasAdb = "f"]; then 
+    if [ $hasAdb = "f" ]; then 
         echo "You have no adb installed."
     else
-        echo "Not implemented."
+        checkDevices
+        if [ "${adbDeviceAttached}" = "f" ]; then
+            echo "It seems no device attached."
+            echo "Please connect a device and allow access from this computer."
+            echo
+        else
+            local pullOption="${2}"
+            case "$pullOption" in
+                "framework" | "-fw")
+                    handlePullSystemFramework "$@";
+                    ;;
+                "app")
+                    handlePullApps "$@";
+                    ;;
+                *)
+                    echo "Unknown option: ${pullOption}";
+                    echo ;
+                    printHelp;
+                    exit -1;
+                    ;;
+            esac
+        fi
     fi
 }
 
@@ -182,6 +304,9 @@ function handleFramework {
     fi
 }
 
+#
+# De-compile Jar 
+#
 function handleJar {
     local jarFilePath="${2}"
     local jarFile=$(basename "${2}")
@@ -247,12 +372,32 @@ if [ $hasJava = "f" ]; then
     echo "Exited because you have no java installed."
 else
     case ${1} in
-        "pull" | "-p") pullMode; ;;
-        "odex" | "-o") handleOdex "${2}" "${3}"; ;;
-        "dex" | "-d") handleDex "${2}" "${3}"; ;;
-        "jar" | "-j") handleJar "$@"; ;;
-        "framework" | "-f") handleFramework; ;;
-        *) printHelp; ;;
+        "pull" | "-p") 
+            pullMode "$@"; 
+            ;;
+
+        "odex" | "-o") 
+            handleOdex "${2}" "${3}"; 
+            ;;
+
+        "dex" | "-d") 
+            handleDex "${2}" "${3}"; 
+            ;;
+
+        "jar" | "-j") 
+            handleJar "$@"; 
+            ;;
+
+        "framework" | "-f") 
+            handleFramework; 
+            ;;
+
+        "dry-run") 
+            checkDevices; 
+            ;;
+        *) 
+            printHelp; 
+            ;;
     esac;
 fi
     

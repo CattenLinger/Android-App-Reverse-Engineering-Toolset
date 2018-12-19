@@ -2,3 +2,5 @@ framework/*
 framework-decoded/*
 output/*
 jd-gui.cfg
+
+!.gitkeep
