@@ -1,0 +1,15 @@
+-----------------------------------------------
+       Android App de-compile toolset
+-----------------------------------------------
+ Author: CattenLinger
+ Email: cattenlinger@outlook.com
+-----------------------------------------------
+
+A toolset to deal with odex, dex and jar. For convenience, I wrote a tool script 
+to use them. Execute the "tools" file in shell to see help info.
+
+It included:
+- JD-CLI    Command-Line tool to handle jar file.
+- JD-GUI    GUI tool to expore jar file.
+- dex-tools Tools for handling android app.
+- oat2dex   Tools for handling odex and oat files.

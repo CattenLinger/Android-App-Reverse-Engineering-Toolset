@@ -1,0 +1,257 @@
+#!/bin/bash
+#
+# Created by CattenLinger
+# Date: 2018-12-19
+#
+
+workDir=$(pwd)
+outputDir="${workDir}/output"
+
+fwPath="${workDir}/framework"
+hasFramework="f"
+
+decodedFw="${workDir}/framework-decoded"
+hasDecodedFw="f"
+
+oat2dex="${workDir}/oat2dex.jar"
+canDeoptimize="f"
+
+dex2jar="${workDir}/dex-tools/d2j-dex2jar.sh"
+jdcli="${workDir}/jd-cli.jar"
+
+hasAdb="f"
+hasJava="f"
+
+echo
+
+function checkFrameworkDir {
+    if [ "l$(ls "${fwPath}")" = "l" ]; then
+        echo "# Android System Framework #############################"
+        echo "#   The framework directory is empty.                  #"
+        echo "#                                                      #"
+        echo "#   Please consider to pull the /system/framework form #"
+        echo "#   your phone for de-optimizing .odex files           #"
+        echo "########################################################"
+        echo
+    else
+        hasFramework="t"
+        canDeoptimize="t"
+    fi
+}
+
+function checkhasDecodedFw {
+    if [ "l$(ls "${decodedFw}")" != "l" ]; then
+        hasDecodedFw="t"
+    fi
+}
+
+function checkAdb {
+    if [ "c$(adb)" = "c" ]; then
+        echo "# Android Debug Tools ##################################"
+        echo "# It seems that you have no adb installed .            #"
+        echo "# Consider to install one.                             #"
+        echo "########################################################"
+        echo
+    else
+        hasAdb="t"
+    fi
+}
+
+function checkJava {
+    if [ "c$(java -version 2>&1)" = "c" ]; then
+        echo "# Java Runtime ########################################"
+        echo "# It seems you have no java runtime!!                 #"
+        echo "#                                                     #"
+        echo "# You need java for do all these things! Install java #"
+        echo "# and retry!                                          #"
+        echo "########################################################"
+    else
+        hasJava="t"
+    fi
+}
+
+#
+# Print help info
+#
+function printHelp {
+    echo "-----------------------------------------------"
+    echo "       Android App de-compile toolset"
+    echo "-----------------------------------------------"
+    echo " Author: CattenLinger"
+    echo " Email: cattenlinger@outlook.com"
+    echo "-----------------------------------------------"
+    echo 
+    echo "Useage: "
+    echo '      pull | -p : Pull files from device'
+    if [ $hasAdb = "f" ]; then
+    echo '                  ** Currently not avaliable, ADB required'
+    fi
+    echo '                  ** Under constructions....'
+    echo
+
+    echo ' framework | -f : De-optimize framework'
+    if [ $hasFramework = "f" ]; then
+    echo '                  ** Currently not avaliable, framework required'
+    fi
+    echo
+    
+    echo '      odex | -o : De-optimize odex'
+    if [ $canDeoptimize = "f" ]; then
+    echo '                  ** Currently not avaliable, require framework'
+    fi
+    echo "                  ${0} -o [filename] <output folder>"
+    echo '                       [filename]: Required, odex file'
+    echo '                  <output folder>: Optional, where to output dex file'
+    echo
+
+    echo '       dex | -d : De-compile dex'
+    echo "                  ${0} -d [filename] <output filename>"
+    echo '                       [filename]: Required, dex file'
+    echo '                  <output folder>: Optional, de-compiled jar file output'
+    echo
+
+    echo '       jar | -j : De-compile jar to source file'
+    echo "                  ${0} -j [filename] <output options> <output target>"
+    echo '                        [filename]: Required, the origin jar file name'
+    echo '                  <output options>: Optional, three options:'
+    echo '                                  --jar | -j : output jar'
+    echo '                                  --zip | -z : output jar and change suffix to "zip"'
+    echo '                                  --dir | -d : output to directory, default'
+    echo '                   <output target>: Optional, where to output'
+    echo '                                    If --dir used, target should be a directory'
+    echo '                                    If --zip | --jar used, target should be a file'
+
+    echo
+}
+
+#
+#   Pull files from phone
+#
+function pullMode {
+    if [ $hasAdb = "f"]; then 
+        echo "You have no adb installed."
+    else
+        echo "Not implemented."
+    fi
+}
+
+#
+# De-optmize odex file to dex
+#
+function handleOdex {
+    if [ $hasFramework = "f" ]; then
+        echo "Can't de-optimize without a framework."
+    else
+        local file=${1}
+        local outputFolder=${2}
+
+        if [ "f${outputFolder}" = "f" ]; then
+            outputFolder=${outputDir}
+        fi
+
+        eval "java -jar \"${oat2dex}\" -o \"${outputFolder}\" \"${file}\" \"${fwPath}\""
+        echo "Finished."
+    fi
+}
+
+#
+# De-compile dex to Jar 
+#
+function handleDex {
+    local file=${1}
+    local outputFile=${2}
+
+    if [ "f${outputFile}" = "f" ]; then
+        outputFile="${outputDir}/$(basename "${1}" | sed 's/\(.*\)\.dex/\1\.jar/')"
+    fi
+
+    eval "\"${dex2jar}\" -o \"${outputFile}\" \"${file}\""
+    echo "Finished."
+}
+
+#
+#   De-optimize framework
+#
+function handleFramework {
+    if [ "$hasFramework" = "f" ]; then
+        echo "You have no Android System Framewrok."
+    else
+        eval "java -jar \"${oat2dex}\" -o \"${decodeFw}\" devfw \"${fwPath}\""
+        echo "Finished."
+    fi
+}
+
+function handleJar {
+    local jarFilePath="${2}"
+    local jarFile=$(basename "${2}")
+
+    local cmd="java -jar \"${jdcli}\" \"${jarFilePath}\" -n -g ALL"
+    local outputOption="${3}"
+
+    local outputFile="${4}"
+    if [ "f$outputOption" = "f" ]; then 
+        outputOption="-d"; 
+    fi
+
+    local filename=''
+    if [ "f${outputFile}" == "f" ]; then
+        case ${outputOption} in
+            "--zip" | "-z") 
+                filename=$(basename "${jarFile}" | sed 's/\(.*\)\.jar/\1\.src\.zip/');
+                cmd="$cmd -oz";
+                ;;
+            "--jar" | "-j") 
+                filename=$(basename "${jarFile}" | sed 's/\(.*\)\.jar/\1\.src\.jar/');
+                cmd="$cmd -oz";
+                ;;
+            "--dir" | "-d") 
+                filename=$(basename "${jarFile}" | sed 's/\(.*\)\.jar/\1/');
+                cmd="$cmd -od";
+                ;;
+            *) 
+                echo "Error: Unknown option ${outputOption}"; 
+                echo; 
+                printHelp; 
+                exit -1; 
+                ;;
+        esac;
+        outputFile="${outputDir}/${filename}";
+    else
+        case ${outputOption} in
+            "--zip" | "-z" | "--jar" | "-j")
+                cmd="$cmd -oz"; ;;
+            *)
+                cmd="$cmd -od"; ;;
+        esac
+    fi
+
+    eval "${cmd} \"${outputFile}\""
+
+    echo "Finshed."
+}
+
+# 
+# Main programe
+# 
+checkJava
+checkFrameworkDir
+checkhasDecodedFw
+checkAdb
+
+# hasAdb="f"
+# hasDecodedFw="f"
+# hasFramework="f"
+
+if [ $hasJava = "f" ]; then
+    echo "Exited because you have no java installed."
+else
+    case ${1} in
+        "pull" | "-p") pullMode; ;;
+        "odex" | "-o") handleOdex "${2}" "${3}"; ;;
+        "dex" | "-d") handleDex "${2}" "${3}"; ;;
+        "jar" | "-j") handleJar "$@"; ;;
+        "framework" | "-f") handleFramework; ;;
+        *) printHelp; ;;
+    esac;
+fi
+    
