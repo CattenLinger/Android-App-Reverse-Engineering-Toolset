@@ -110,37 +110,54 @@ function printHelp {
     echo '                            [app name]: Pull app, auto find in those two'
     echo '                                        folders'
 
-    echo ' framework | -f : De-optimize framework'
+    echo '    framework | -f : De-optimize framework'
     if [ $hasFramework = "f" ]; then
-    echo '     ** Currently not avaliable, framework required'
+    echo '        ** Currently not avaliable, framework required'
     fi
     echo
     
-    echo ' odex | -o : De-optimize odex'
+    echo '    odex | -o : De-optimize odex'
     if [ $canDeoptimize = "f" ]; then
-    echo '     ** Currently not avaliable, require framework'
+    echo '        ** Currently not avaliable, require framework'
     fi
-    echo "     ${0} -o [filename] <output folder>"
-    echo '          [filename]: Required, odex file'
-    echo '     <output folder>: Optional, where to output dex file'
+    echo "        ${0} -o [filename] <output folder>"
+    echo '             [filename]: Required, odex file'
+    echo '        <output folder>: Optional, where to output dex file'
     echo
-    echo ' dex | -d : De-compile dex'
-    echo "     ${0} -d [filename] <output filename>"
-    echo '          [filename]: Required, dex file'
-    echo '     <output folder>: Optional, de-compiled jar file output'
+    echo '    dex | -d : De-compile dex'
+    echo "        ${0} -d [filename] <output filename>"
+    echo '             [filename]: Required, dex file'
+    echo '        <output folder>: Optional, de-compiled jar file output'
     echo
-    echo '  jar | -j : De-compile jar to source file'
-    echo "      ${0} -j [filename] <output options> <output target>"
-    echo '                [filename]: Required, the origin jar file name'
-    echo '          <output options>: Optional, three options:'
-    echo '               --jar | -j : output jar'
-    echo '               --zip | -z : output jar and change suffix to "zip"'
-    echo '               --dir | -d : output to directory, default'
-    echo '           <output target>: Optional, where to output'
-    echo '                            If --dir used, target should be a directory'
-    echo '                            If --zip | --jar used, target should be a file'
+    echo '    jar | -j : De-compile jar to source file'
+    echo "        ${0} -j [filename] <output options> <output target>"
+    echo '                  [filename]: Required, the origin jar file name'
+    echo '            <output options>: Optional, three options:'
+    echo '                 --jar | -j : output jar'
+    echo '                 --zip | -z : output jar and change suffix to "zip"'
+    echo '                 --dir | -d : output to directory, default'
+    echo '             <output target>: Optional, where to output'
+    echo '                              If --dir used, target should be a directory'
+    echo '                              If --zip | --jar used, target should be a file'
+    echo
 
-    echo
+
+    echo "Function list:"
+    
+    echo -n '    '
+    if [ $hasAdb = "t" ]; then echo -n '✔'; else echo -n '✖';fi;
+    echo " pull";
+    
+    echo -n '    '
+    if [ $hasFramework = "t" ]; then echo -n '✔'; else echo -n '✖';fi;
+    echo " framework";
+
+    echo -n '    '
+    if [ $canDeoptimize = "t" ]; then echo -n '✔'; else echo -n '✖';fi;
+    echo " odex";
+
+    echo "   ✔ dex";
+    echo "   ✔ jar";
 }
 
 
@@ -364,12 +381,13 @@ checkFrameworkDir
 checkhasDecodedFw
 checkAdb
 
-# hasAdb="f"
-# hasDecodedFw="f"
-# hasFramework="f"
+hasAdb="f"
+hasDecodedFw="f"
+hasFramework="f"
+canDeoptimize="f"
 
 if [ $hasJava = "f" ]; then
-    echo "Exited because you have no java installed."
+    echo "Exited because there no java installed."
 else
     case ${1} in
         "pull" | "-p") 
