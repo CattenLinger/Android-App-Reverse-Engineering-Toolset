@@ -318,7 +318,7 @@ function handleFramework {
     if [ "$hasFramework" = "f" ]; then
         echo "You have no Android System Framewrok."
     else
-        eval "java -jar \"${oat2dex}\" -o \"${decodeFw}\" devfw \"${fwPath}\""
+        eval "java -jar \"${oat2dex}\" -o \"${decodedFw}\" devfw \"${fwPath}\""
         echo "Finished."
     fi
 }
