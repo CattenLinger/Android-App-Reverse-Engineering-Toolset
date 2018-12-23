@@ -5,10 +5,11 @@
 #
 
 workDir=$(pwd)
+
+# output directory
+# if not exists, create one
 outputDir="${workDir}/output"
-if [ ! -d "$outputDir" ]; then
-  mkdir "$outputDir"
-fi
+[ -d "$outputDir" ] || mkdir "$outputDir" 
 
 oat2dex="${workDir}/oat2dex.jar"
 dex2jar="${workDir}/dex-tools/d2j-dex2jar.sh"
@@ -20,10 +21,11 @@ echo
 #   Check abilities
 #
 
+# Framework path
+# if not exist, create one
 fwPath="${workDir}/framework"
-if [ ! -d "$fwPath" ]; then
-  mkdir "$fwPath"
-fi
+[ -d "$fwPath" ] || mkdir "$fwPath"
+
 hasFramework="f"
 canDeoptimize="f"
 function checkFrameworkDir {
@@ -41,10 +43,11 @@ function checkFrameworkDir {
     fi
 }
 
+# decode framework path
+# if not exists, create one
 decodedFw="${workDir}/framework-decoded"
-if [ ! -d "$decodedFw" ]; then
-  mkdir "$decodedFw"
-fi
+[ -d "$decodedFw" ] || mkdir "$decodedFw"
+
 hasDecodedFw="f"
 function checkhasDecodedFw {
     if [ "l$(ls "${decodedFw}")" != "l" ]; then
@@ -201,7 +204,7 @@ function handlePullSystemFramework {
                         ;;
 
                     *) 
-                        echo "Framework directory is not empty, override?"; 
+                        echo "Framework directory is not empty, override?(yes/no):"
                         ;;
                 esac
             done
@@ -253,7 +256,7 @@ function pullMode {
         echo "You have no adb installed."
     else
         checkDevices
-        if [ "${adbDeviceAttached}" = "f" ]; then
+        if [ "f${adbDeviceAttached}" = "f" ]; then
             echo "It seems no device attached."
             echo "Please connect a device and allow access from this computer."
             echo
@@ -318,6 +321,27 @@ function handleFramework {
     if [ "$hasFramework" = "f" ]; then
         echo "You have no Android System Framewrok."
     else
+        if [ $hasDecodedFw == "t" ]; then 
+            while true; do
+                echo "Decoded framework directory is not empty, override?(yes/no):"
+                read override
+                case $override in
+                    "yes" | "YES" | "y")
+                        rm -rf "${decodedFw}";
+                        break;
+                        ;;
+
+                    "no" | "NO" | "n") 
+                        exit 0; 
+                        break;
+                        ;;
+
+                    *) 
+                        echo "Decoded framework directory is not empty, override?(yes/no):"; 
+                        ;;
+                esac
+            done
+        fi
         eval "java -jar \"${oat2dex}\" -o \"${decodedFw}\" devfw \"${fwPath}\""
         echo "Finished."
     fi
